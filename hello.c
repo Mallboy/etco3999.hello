@@ -5,6 +5,7 @@
 // link the pattern table into CHR ROM
 //#link "chr_generic.s"
 
+/*{pal:"nes",layout:"nes"}*/
 const char PALETTE[32] =
   {
     0x04, // screen color
