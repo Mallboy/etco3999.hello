@@ -10,7 +10,7 @@ const char PALETTE[32] =
   {
     0x04, // screen color
     0x1c, 0x33, 0x3c, 0x0, // background palette 0
-    0x1c, 0x20, 0x2c, 0x0, // background palette 1
+    0x11, 0x24, 0x2c, 0x0, // background palette 1
     0x00, 0x1a, 0x20, 0x0, // background palette 2
     0x00, 0x1a, 0x20, 0x0, // background palette 3
     0x23, 0x31, 0x41, 0x0, // sprite palette 0
@@ -19,19 +19,45 @@ const char PALETTE[32] =
     0x1d, 0x37, 0x2b, // sprite palette 3
   };
 
+#define DEF_METASPRITE_2x2(name,code,pal)\
+const unsigned char name[]={\
+        0,      0,      (code)+0,   pal, \
+        0,      8,      (code)+1,   pal, \
+        8,      0,      (code)+2,   pal, \
+        8,      8,      (code)+3,   pal, \
+        128};
+
+// define a 2x2 metasprite, flipped horizontally
+#define DEF_METASPRITE_2x2_FLIP(name,code,pal)\
+const unsigned char name[]={\
+        8,      0,      (code)+0,   (pal)|OAM_FLIP_H, \
+        8,      8,      (code)+1,   (pal)|OAM_FLIP_H, \
+        0,      0,      (code)+2,   (pal)|OAM_FLIP_H, \
+        0,      8,      (code)+3,   (pal)|OAM_FLIP_H, \
+        128};
+
+DEF_METASPRITE_2x2(playerRStand, 0xd8, 0);
+DEF_METASPRITE_2x2_FLIP(playerLStand, 0xd8, 0);
+
+const unsigned char* const playerStand[2] = {
+  playerLStand, playerRStand
+};
+
 // main function, run after console reset
 void main(void) {
 
-  unsigned char x = 200;
+  unsigned char x = 50;
   unsigned char att = 0x40;
+  int face = 1;
   unsigned char xDir = 2;
   
-  unsigned char y = 140;
+  unsigned char y = 143;
   unsigned char yoff = 5;
   unsigned char yDir = 1;
   
   int bx = 0;
   int by = 20;
+  
   // set palette colors
   //pal_col(0,0x04);	// set screen to dark blue
   //pal_col(1,0x1c);	// fuchsia
@@ -52,12 +78,12 @@ void main(void) {
   
   while(by < 30)
   {
-    bx = 0;
-    while(bx < 21)
+    bx = -0;
+    while(bx < 32)
     {
       vram_adr(NTADR_A(bx,by));
-      vram_write("\x0A\x0A\x0A\x0A\x0A\x0A\x0A\x0A\x0A\x0A\x0a", 11);
-      bx += 10;
+      vram_write("\x0f\x0A\x0A\x0A\x0A\x0A\x0A\x0A\x0A\x0A\x0a", 11);
+      bx += 2;
     }
     by += 1;
   }
@@ -72,16 +98,18 @@ void main(void) {
     x += xDir;
     yoff += yDir;
     
-    if(x > 240)
+    if(x > 235)
     {
       xDir -= 2;
       att = 0x0;
+      face = 0;
     }
     
     if(x < 8)
     {
       xDir += 2;
       att = 0x40;
+      face = 1;
     }
     
     if(yoff > 10)
@@ -93,8 +121,8 @@ void main(void) {
       yDir += 2;
     }
     
-    
-    cur_oam = oam_spr(x, y+yoff, 0x19, att, cur_oam);
+    cur_oam = oam_meta_spr(x, y, cur_oam, playerStand[face]);
+    cur_oam = oam_spr(x+(8*face), (y+yoff)-16, 0x19, att, cur_oam);
     ppu_wait_frame();
   }
 }
