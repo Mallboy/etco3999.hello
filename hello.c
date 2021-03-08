@@ -8,8 +8,9 @@
 // main function, run after console reset
 void main(void) {
 
-  unsigned char x = 0;
-  unsigned char y = 0;
+  unsigned char x = 200;
+  unsigned char att = 0x40;
+  unsigned char xDir = 1;
   // set palette colors
   //pal_col(0,0x04);	// set screen to dark blue
   //pal_col(1,0x1c);	// fuchsia
@@ -38,7 +39,7 @@ void main(void) {
   // write text to name table
   vram_adr(NTADR_A(2,2));		// set address
   vram_write("HELL\x19, W\x19RLD!\x11", 14);	// write bytes to video RAM
-
+  
   // enable PPU rendering (turn on screen)
   ppu_on_all();
   
@@ -47,9 +48,22 @@ void main(void) {
   while (1)
   {
     char cur_oam = 0;
-    x += 2;
+    x += xDir;
     
-    cur_oam = oam_spr(x, 30, 0x19, 0x0, cur_oam);
+    if(x > 240)
+    {
+      xDir -= 2;
+      att = 0x0;
+    }
+    
+    if(x < 8)
+    {
+      xDir += 2;
+      att = 0x40;
+    }
+    
+    
+    cur_oam = oam_spr(x, 30, 0x19, att, cur_oam);
     ppu_wait_frame();
   }
 }
