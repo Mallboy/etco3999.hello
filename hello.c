@@ -4,6 +4,7 @@
 
 // link the pattern table into CHR ROM
 //#link "chr_generic.s"
+//#link "vrambuf.c"
 
 /*{pal:"nes",layout:"nes"}*/
 const char PALETTE[32] =
@@ -14,7 +15,7 @@ const char PALETTE[32] =
     0x00, 0x1A, 0x20, 0x00, // background palette 2
     0x00, 0x1A, 0x20, 0x00, // background palette 3
     0x23, 0x31, 0x41, 0x00, // sprite palette 0
-    0x07, 0x15, 0x06, 0x00, // sprite palette 1
+    0x17, 0x15, 0x06, 0x00, // sprite palette 1
     0x36, 0x21, 0x19, 0x00, // sprite palette 2
     0x1D, 0x37, 0x2B, // sprite palette 3
   };
@@ -75,6 +76,7 @@ void main(void) {
   int bx = 0;
   int by = 20;
   
+  
   // set palette colors
   //pal_col(0,0x04);	// set screen to dark blue
   //pal_col(1,0x1c);	// fuchsia
@@ -90,8 +92,14 @@ void main(void) {
   pal_all(PALETTE);
   
   // write text to name table
-  vram_adr(NTADR_A(2,2));		// set address
-  vram_write("HELL\x19, W\x19RLD!\x11", 14);	// write bytes to video RAM
+  vram_adr(NTADR_A(1,1));		// set address
+  vram_write("This is", 7);	// write bytes to video RAM
+  
+  vram_adr(NTADR_A(1,2));		// set address
+  vram_write("Elijah Maloy's", 14);
+  
+  vram_adr(NTADR_A(1,3));		// set address
+  vram_write("first NES 'Game'!", 18);
   
   while(by < 30)
   {
@@ -116,6 +124,9 @@ void main(void) {
   ppu_on_all();
   
 
+  vrambuf_clear();
+  set_vram_update(updbuf);
+  
   // infinite loop
   while (1)
   {
@@ -149,6 +160,16 @@ void main(void) {
     cur_oam = oam_meta_spr(x, y, cur_oam, playerStand[face]);
     cur_oam = oam_meta_spr(232, y, cur_oam, doorSprite);
     cur_oam = oam_spr(x+(8*face), (y+yoff)-16, 0x19, att, cur_oam);
-    ppu_wait_frame();
+    
+    if(x>232-16)
+    {
+      vrambuf_put(NTADR_A(1,5), "On the door!", 12);
+    }
+    else
+    {
+      vrambuf_put(NTADR_A(1,5), "           ", 12);
+    }
+    vrambuf_flush();
+    //ppu_wait_frame();
   }
 }
