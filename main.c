@@ -81,39 +81,30 @@ struct Bomb
 
 struct Player
 {
-  unsigned char x;
-  unsigned char y;
+  unsigned char sx;
+  unsigned char sy;
+  unsigned char wx;
+  unsigned char wy;
   //unsigned char dir; // Lower 4 x, Higher 4 y
   unsigned char xDir;
   unsigned char yDir;
+  unsigned char speed;
   unsigned char att;
   int face;
 };
 
-struct Controller
-{
-  unsigned char a;
-  unsigned char b;
-  unsigned char select;
-  unsigned char start;
-  unsigned char up;
-  unsigned char down;
-  unsigned char left;
-  unsigned char right;
-};
-
-struct Controller controller = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
-
 // main function, run after console reset
 void main(void) {
   
-  struct Player player = {50, 143, 0, 0, 0x40, 1};
+  struct Player player = {50, 143, 0, 0, 0, 0, 3, 0x40, 1};
   
   struct Bomb bomb = {143, 5, 1};
   
   int bx = 0;
   int by = 20;
   
+  int gravStrength = 6; // Scale of 0-10
+  int t = 0;
   
   // set palette colors
   //pal_col(0,0x04);	// set screen to dark blue
@@ -186,20 +177,62 @@ void main(void) {
     
     char cur_oam = 0;
     
-    player.x += player.xDir;
-    bomb.yoff += bomb.yDir;
+    scroll(player.wx, player.wy);
     
-    if(pad_result & controller.left)
+    player.sx += player.xDir;
+    player.sy += player.yDir;
+    bomb.yoff += bomb.yDir;
+    bomb.y = player.sy;
+    
+    if(player.sy < 143)
     {
-      player.xDir = -2;
-      player.att = 0x0;
-      player.face = 0;
+      player.sy += player.yDir;
+      t += 1;
+      if(t % (10 - gravStrength) == 0)
+      {
+        player.yDir += 1;
+      }
+      
     }
-    else if(pad_result & controller.right)
+    else
     {
-      player.xDir = 2;
-      player.att = 0x40;
-      player.face = 1;
+      player.sy = 143;
+      player.yDir = 0;
+      t = 0;
+    }
+    
+    if((pad_result & PAD_A) && player.sy >= 143)
+    {
+     	player.yDir = -3;
+    }
+    
+    if(pad_result & PAD_LEFT)
+    {
+      if(player.sx > 50)
+      {
+        player.xDir = -player.speed;
+        player.att = 0x0;
+        player.face = 0;
+      }
+      else
+      {
+        player.xDir = 0;
+        player.wx -= player.speed;
+      }
+    }
+    else if(pad_result & PAD_RIGHT)
+    {
+      if(player.sx < 200)
+      {
+        player.xDir = player.speed;
+        player.att = 0x40;
+        player.face = 1;
+      }
+      else
+      {
+        player.xDir = 0;
+        player.wx += player.speed;
+      }
     }
     else
     {
@@ -215,14 +248,14 @@ void main(void) {
       bomb.yDir += 2;
     }
     
-    cur_oam = oam_meta_spr(player.x, player.y, cur_oam, playerStand[player.face]);
+    cur_oam = oam_meta_spr(player.sx, player.sy, cur_oam, playerStand[player.face]);
     cur_oam = oam_meta_spr(232, 143, cur_oam, doorSprite);
-    cur_oam = oam_spr(player.x+(8*player.face), (bomb.y+bomb.yoff)-16, 0x19, player.att, cur_oam);
-    cur_oam = oam_spr(player.x+(12-(8*player.face)), (bomb.y-bomb.yoff), 0x19, player.att, cur_oam);
-    cur_oam = oam_spr(player.x+(4-(8*player.face)), (bomb.y-bomb.yoff), 0x19, player.att, cur_oam);
-    cur_oam = oam_spr(player.x+(8 - (8*player.face)), (bomb.y+bomb.yoff)-16, 0x19, player.att, cur_oam);
+    cur_oam = oam_spr(player.sx+(8*player.face), (bomb.y+bomb.yoff)-16, 0x19, player.att, cur_oam);
+    cur_oam = oam_spr(player.sx+(12-(8*player.face)), (bomb.y-bomb.yoff), 0x19, player.att, cur_oam);
+    cur_oam = oam_spr(player.sx+(4-(8*player.face)), (bomb.y-bomb.yoff), 0x19, player.att, cur_oam);
+    cur_oam = oam_spr(player.sx+(8 - (8*player.face)), (bomb.y+bomb.yoff)-16, 0x19, player.att, cur_oam);
     
-    if(player.x>232-16)
+    if(player.sx>232-16)
     {
       vrambuf_put(NTADR_A(1,5), "On the door!", 12);
     }
