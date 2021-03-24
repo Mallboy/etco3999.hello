@@ -72,6 +72,12 @@ const unsigned char* const playerStand[2] = {
   playerLStand, playerRStand
 };
 
+struct Bomb {
+  unsigned char y;
+  unsigned char yoff;
+  unsigned char yDir;
+} Bomb;
+
 // main function, run after console reset
 void main(void) {
 
@@ -83,6 +89,8 @@ void main(void) {
   unsigned char y = 143;
   unsigned char yoff = 5;
   unsigned char yDir = 1;
+  
+  struct Bomb bomb = {143, 5, 1};
   
   int bx = 0;
   int by = 20;
@@ -155,10 +163,31 @@ void main(void) {
   // infinite loop
   while (1)
   {
-    char cur_oam = 0;
-    x += xDir;
-    yoff += yDir;
+    char pad_result = pad_poll(0);
     
+    char cur_oam = 0;
+    
+    x += xDir;
+    bomb.yoff += bomb.yDir;
+    
+    
+    if(pad_result & 0x40)
+    {
+    	xDir = -2;
+      	att = 0x0;
+      	face = 0;
+    }
+    else if(pad_result & 0x80)
+    {
+     	xDir = 2;
+      	att = 0x40;
+      	face = 1;
+    }
+    else
+    {
+     	xDir = 0; 
+    }
+    /*
     if(x > 235)
     {
       xDir -= 2;
@@ -172,19 +201,20 @@ void main(void) {
       att = 0x40;
       face = 1;
     }
+    */
     
-    if(yoff > 10)
+    if(bomb.yoff > 10)
     {
-      yDir -= 2;
+      bomb.yDir -= 2;
     }
-    if(yoff < 5)
+    if(bomb.yoff < 5)
     {
-      yDir += 2;
+      bomb.yDir += 2;
     }
     
     cur_oam = oam_meta_spr(x, y, cur_oam, playerStand[face]);
     cur_oam = oam_meta_spr(232, y, cur_oam, doorSprite);
-    cur_oam = oam_spr(x+(8*face), (y+yoff)-16, 0x19, att, cur_oam);
+    cur_oam = oam_spr(x+(8*face), (bomb.y+bomb.yoff)-16, 0x19, att, cur_oam);
     
     if(x>232-16)
     {
